@@ -170,7 +170,7 @@ svg.map{display:block;width:100%;height:auto;max-height:76vh;margin:0 auto;touch
 .chip{touch-action:none;user-select:none;-webkit-user-select:none;border:1.5px solid var(--ink);background:var(--paper);border-radius:4px 7px 5px 6px;padding:.15rem .6rem;font-family:var(--f-hand);font-size:1.05rem;box-shadow:2px 2px 0 var(--paper-2);cursor:grab}
 .chip:nth-child(3n){transform:rotate(-1.5deg)} .chip:nth-child(3n+1){transform:rotate(1deg)}
 .chip.sel{background:var(--hl);box-shadow:2px 2px 0 var(--ink)}
-.ghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-130%) rotate(-3deg);border:2px solid var(--ink);background:var(--hl);color:var(--ink);font-family:var(--f-hand);font-size:1.15rem;padding:.15rem .7rem;border-radius:5px;box-shadow:3px 4px 0 var(--shadow)}
+.dragghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-130%) rotate(-3deg);border:2px solid var(--ink);background:var(--hl);color:var(--ink);font-family:var(--f-hand);font-size:1.15rem;padding:.15rem .7rem;border-radius:5px;box-shadow:3px 4px 0 var(--shadow)}
 .dragmsg{min-height:1.4em;color:var(--red);font-family:var(--f-hand);margin:4px 0 0}
 .dragcount{font-family:var(--f-hand);font-size:1.15rem}
 
@@ -461,7 +461,35 @@ function render(){
   if(view==='setup')bindSetup();
   if(view==='game')bindGame();
   if(view==='result')bindResult();
+  saveSession();
 }
+
+/* ---------- REMEMBER WHERE YOU WERE ---------- */
+const SKEY='nordenhaftet-session';
+function saveSession(){
+  try{
+    const s={view,studyC,cover,sel,revealed:[...revealed],setup,G};
+    localStorage.setItem(SKEY,JSON.stringify(s,(k,v)=>v&&typeof v==='object'&&v.kind&&v.at&&FBY[v.id]===v?{__f:v.id}:v));
+  }catch(e){}
+}
+function loadSession(){
+  try{
+    const raw=localStorage.getItem(SKEY);if(!raw)return;
+    const s=JSON.parse(raw,(k,v)=>v&&typeof v==='object'&&v.__f?FBY[v.__f]:v);
+    if(C[s.studyC])studyC=s.studyC;
+    cover=!!s.cover;sel=FBY[s.sel]?s.sel:null;revealed=new Set(s.revealed||[]);
+    if(s.setup&&(s.setup.ch==='all'||C[s.setup.ch])&&VARS[s.setup.variant])setup=s.setup;
+    const g=s.G;
+    const gameOk=g&&Array.isArray(g.qs)&&g.qs[g.i]&&g.drag;
+    if((s.view==='game'||s.view==='result')&&gameOk){G=g;view=s.view}
+    else if(s.view==='setup'||s.view==='game'||s.view==='result')view='setup';
+    else view='study';
+  }catch(e){view='study';G=null}
+}
+function saveScroll(){try{localStorage.setItem(SKEY+'-y',String(Math.round(window.scrollY)))}catch(e){}}
+let scrollT=null;
+window.addEventListener('scroll',()=>{clearTimeout(scrollT);scrollT=setTimeout(saveScroll,200)},{passive:true});
+window.addEventListener('pagehide',()=>{saveScroll();saveSession()});
 
 /* ---------- STUDY ---------- */
 function groups(cid){
@@ -624,6 +652,7 @@ function gameHTML(){
   <div class="grid2">
     <div class="sheet mapwrap ${(q.t==='find'||q.t==='drag')&&!lock?'clickable':''}" id="gmap">${map}</div>
     <div>
+      ${G.i===0&&!G.res&&G.variant!=='normal'?`<p class="pencil" style="margin:0 0 10px"><b>${v.name}:</b> ${v.desc}</p>`:''}
       <div class="method">${methodName} · ${G.ch==='all'||q.t==='country'||q.t==='flag'?'Norden':C[q.c].name}</div>
       <p class="prompt">${esc(q.prompt)}</p>
       ${q.t==='flag'?`<div class="bigflag">${flagSVG(q.c,150)}</div>`:''}
@@ -709,14 +738,14 @@ function resultHTML(){
         ${G.missed.length?`<button class="btn ghost" id="practice">Öva på missade</button>`:''}
         <button class="btn ghost" id="tostudy">Till pluggsidan</button>
       </div>
-      <p class="pencil small" style="margin-top:10px">Variera spelet väljer ett nytt spelsätt, till exempel Blixtrunda, Hemlig karta eller Tre liv.</p>
+      <p class="pencil small" style="margin-top:10px">Variera spelet startar direkt ett nytt spelsätt, till exempel Kartpusslet, Blixtrunda, Hemlig karta eller Tre liv.</p>
     </div>
   </div>${ms}`;
 }
 function bindResult(){
   const missedKeys=G.missed.map(m=>m.key);
   $('#again').onclick=()=>{setup.variant=G.variant==='missade'?'normal':G.variant;startGame()};
-  $('#vary').onclick=()=>{setup.variant=pick(TWISTS.filter(t=>t!==G.variant));view='setup';render();window.scrollTo({top:0})};
+  $('#vary').onclick=()=>{setup.ch=G.ch;setup.variant=pick(TWISTS.filter(t=>t!==G.variant));startGame();window.scrollTo({top:0})};
   const p=$('#practice');if(p)p.onclick=()=>startGame(missedKeys);
   $('#tostudy').onclick=()=>{view='study';if(G.ch!=='all')studyC=G.ch;G=null;render()};
 }
@@ -741,7 +770,7 @@ function bindDrag(q){
     const id=ch.dataset.id;
     ch.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();dragId=id;moved=false;sx=e.clientX;sy=e.clientY;try{ch.setPointerCapture(e.pointerId)}catch(_){}});
     ch.addEventListener('pointermove',e=>{if(dragId!==id)return;
-      if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)>6){moved=true;ghost=document.createElement('div');ghost.className='ghost';ghost.textContent=FBY[id].name;document.body.appendChild(ghost)}
+      if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)>6){moved=true;ghost=document.createElement('div');ghost.className='dragghost';ghost.textContent=FBY[id].name;document.body.appendChild(ghost)}
       if(ghost){ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px'}});
     ch.addEventListener('pointerup',e=>{if(dragId!==id)return;const wasMoved=moved;end();
       if(wasMoved){const r=svg.getBoundingClientRect();
@@ -762,5 +791,7 @@ document.addEventListener('keydown',e=>{
   if(!G.res&&q.opts&&/^[1-4]$/.test(e.key)){const o=q.opts[+e.key-1];if(o!==undefined)resolve(o===q.ans,{chosen:o})}
 });
 
+loadSession();
 render();
+try{const y=+localStorage.getItem(SKEY+'-y')||0;if(y)requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,y)))}catch(e){}
 </script>
