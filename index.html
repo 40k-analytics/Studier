@@ -166,6 +166,13 @@ svg.map{display:block;width:100%;height:auto;max-height:76vh;margin:0 auto;touch
 .missed li{border-bottom:1px solid var(--rule);padding:4px 0;font-size:1.1rem;display:flex;gap:8px;flex-wrap:wrap}
 .missed .ans{color:var(--green);font-weight:700}
 .mt{margin-top:22px}
+.tray{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:var(--paper);border-bottom:2px dashed var(--ink-soft);padding:8px 4px 10px;margin:-2px -2px 8px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{touch-action:none;user-select:none;-webkit-user-select:none;border:1.5px solid var(--ink);background:var(--paper);border-radius:4px 7px 5px 6px;padding:.15rem .6rem;font-family:var(--f-hand);font-size:1.05rem;box-shadow:2px 2px 0 var(--paper-2);cursor:grab}
+.chip:nth-child(3n){transform:rotate(-1.5deg)} .chip:nth-child(3n+1){transform:rotate(1deg)}
+.chip.sel{background:var(--hl);box-shadow:2px 2px 0 var(--ink)}
+.ghost{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-130%) rotate(-3deg);border:2px solid var(--ink);background:var(--hl);color:var(--ink);font-family:var(--f-hand);font-size:1.15rem;padding:.15rem .7rem;border-radius:5px;box-shadow:3px 4px 0 var(--shadow)}
+.dragmsg{min-height:1.4em;color:var(--red);font-family:var(--f-hand);margin:4px 0 0}
+.dragcount{font-family:var(--f-hand);font-size:1.15rem}
 
 @media (max-width:640px){
   .page{padding:18px 14px 30px 44px;background-image:linear-gradient(90deg,transparent 32px,var(--margin) 32px,var(--margin) 34px,transparent 34px),
@@ -432,9 +439,10 @@ const VARS={
  stava:{name:'Stavningsprovet',desc:'10 platser som du ska skriva rätt.'},
  fakta:{name:'Faktajakten',desc:'Flaggor, huvudstäder och vad platserna är för något.'},
  treliv:{name:'Tre liv',desc:'Hur många rätt kan du få innan du gjort tre fel?'},
+ pussel:{name:'Kartpusslet',desc:'Dra alla namn till rätt plats på kartan, land för land.'},
  missade:{name:'Öva på missade',desc:'Bara de platser och frågor du missade förra gången.'}
 };
-const TWISTS=['blixt','hemlig','stava','fakta','treliv'];
+const TWISTS=['pussel','blixt','hemlig','stava','fakta','treliv'];
 
 function render(){
   stopTimer();
@@ -479,7 +487,7 @@ function studyHTML(){
       <div class="legend">${leg}</div>
       <h4 class="hand" style="margin:22px 0 0;font-size:1.15rem;text-decoration:underline wavy;text-underline-offset:5px">Bra att veta:</h4>
       <ul class="facts">${c.facts.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
-      <div class="row mt"><button class="btn" id="testme">Testa dig på ${c.name}</button></div>
+      <div class="row mt"><button class="btn" id="testme">Testa dig på ${c.name}</button><button class="btn ghost" id="puzzle">Kartpussel</button></div>
     </div>
   </div>`;
 }
@@ -488,6 +496,7 @@ function bindStudy(){
   document.querySelectorAll('.li').forEach(b=>b.onclick=()=>{sel=b.dataset.f;if(cover)revealed.add(sel);render()});
   $('#cover').onclick=()=>{cover=!cover;revealed.clear();render()};
   $('#testme').onclick=()=>{setup.ch=studyC;setup.variant='normal';startGame()};
+  $('#puzzle').onclick=()=>{setup.ch=studyC;setup.variant='pussel';startGame()};
   const svg=$('#smap svg');
   svg.addEventListener('click',e=>{const p=svgPoint(svg,e);const f=nearest(studyC,p.x,p.y,30);if(f){sel=f.id;if(cover)revealed.add(f.id);render()}});
 }
@@ -513,6 +522,7 @@ function bindSetup(){
 /* ---------- QUESTIONS ---------- */
 function buildQ(t,ch,f,fact){
   if(t==='fact'){return{t,c:fact.c,prompt:fact.q,opts:shuffle([fact.a,...fact.o]),ans:fact.a,f:fact.f&&FBY[fact.f],key:'q:'+fact.id,show:fact.a}}
+  if(t==='drag'){const cid=f;return{t,c:cid,prompt:`Dra namnen till rätt plats på kartan över ${C[cid].name}.`,key:'drag:'+cid,show:''}}
   if(t==='flag'){const cid=f;return{t,c:cid,prompt:'Vilket lands flagga är det här?',opts:shuffle(CIDS.map(i=>C[i].name)),ans:C[cid].name,key:'flag:'+cid,show:C[cid].name,nomap:true}}
   const base={t,f,c:f.c,key:'f:'+f.id,show:f.name};
   if(t==='find')return{...base,prompt:`Hitta ${lab(f)} på kartan.`};
@@ -532,8 +542,8 @@ function makeRound(ch,variant,missedKeys){
   const nF=()=>{let f;do{if(fi>=feats.length){feats=shuffle(feats);fi=0}f=feats[fi++]}while(f===last&&feats.length>1);last=f;return f};
   const nQ=()=>{if(qi>=facts.length){facts=shuffle(facts);qi=0}return facts[qi++]};
   const cidFor=()=>ch==='all'?pick(CIDS):ch;
-  const mk=t=>t==='fact'?buildQ(t,ch,null,nQ()):t==='flag'?buildQ(t,ch,cidFor()):buildQ(t,ch,nF());
-  const mix=['find','find','find','name','name','name','spell','spell','fact','fact','kind',ch==='all'?'country':'flag'];
+  const mk=t=>t==='fact'?buildQ(t,ch,null,nQ()):(t==='flag'||t==='drag')?buildQ(t,ch,cidFor()):buildQ(t,ch,nF());
+  const mix=['drag','find','find','name','name','name','spell','spell','fact','fact','kind',ch==='all'?'country':'flag'];
   let types;
   if(variant==='missade'){
     const qs=[];missedKeys.forEach(k=>{const[a,b]=k.split(':');
@@ -545,13 +555,15 @@ function makeRound(ch,variant,missedKeys){
   if(variant==='stava')types=Array(10).fill('spell');
   else if(variant==='hemlig')types=[...Array(7).fill('find'),...Array(5).fill('name')];
   else if(variant==='fakta')types=['fact','fact','fact','fact','fact','flag','kind','kind',ch==='all'?'country':'fact',ch==='all'?'country':'kind'];
-  else if(variant==='treliv')types=Array.from({length:40},()=>pick(mix));
+  else if(variant==='treliv')types=Array.from({length:40},()=>pick(mix.filter(t=>t!=='drag')));
+  else if(variant==='pussel')return (ch==='all'?shuffle(CIDS.slice()):[ch]).map(c=>buildQ('drag',ch,c));
   else types=mix.slice();
   return shuffle(types).map(mk);
 }
 function startGame(missedKeys){
   const variant=missedKeys?'missade':setup.variant;
   G={ch:setup.ch,variant,qs:makeRound(setup.ch,variant,missedKeys),i:0,score:0,res:null,missed:[],lives:3,answered:0};
+  newDrag();
   view='game';render();
 }
 
@@ -561,12 +573,17 @@ function gameHTML(){
   const total=G.variant==='treliv'?'':` av ${G.qs.length}`;
   const status=G.variant==='treliv'?`<span class="hearts">${[0,1,2].map(i=>ICON.heart(i<G.lives)).join('')}</span>`:
     G.variant==='blixt'?`<span class="timer" aria-label="Tid kvar"><i id="tbar"></i></span>`:'';
-  const methodName={find:'Kartfråga',name:'Välj rätt namn',spell:'Stava',fact:'Fakta',flag:'Flagga',kind:'Vad är det?',country:'Vilket land?'}[q.t];
+  const methodName={drag:'Dra och släpp',find:'Kartfråga',name:'Välj rätt namn',spell:'Stava',fact:'Fakta',flag:'Flagga',kind:'Vad är det?',country:'Vilket land?'}[q.t];
   // map
   let map;
   const reveal=[];
   if(G.res){const tf=q.f;if(tf)reveal.push({id:tf.id,cls:'good'});if(G.res.clicked&&(!tf||G.res.clicked!==tf.id))reveal.push({id:G.res.clicked,cls:'bad'})}
-  if(q.nomap&&!G.res)map=`<div class="blank">Kartan visas<br>när du har svarat.</div>`;
+  if(q.t==='drag'){
+    const D=G.drag,left=FEAT.filter(f=>f.c===q.c&&!D.placed.includes(f.id));
+    const tray=G.res?'':`<div class="tray" id="tray">${shuffleOnce(left).map(f=>`<button class="chip ${D.sel===f.id?'sel':''}" data-id="${f.id}">${esc(f.name)}</button>`).join('')}</div>`;
+    map=tray+mapSVG(q.c,{mode:'quiz',reveal:D.placed.map(id=>({id,cls:'good'})),cross:D.cross});
+  }
+  else if(q.nomap&&!G.res)map=`<div class="blank">Kartan visas<br>när du har svarat.</div>`;
   else{
     const hl=(['name','spell','kind'].includes(q.t)&&!G.res)?q.f.id:null;
     map=mapSVG(q.c,{mode:hidden?'hidden':'quiz',hl,reveal,cross:G.res&&G.res.cross});
@@ -582,6 +599,10 @@ function gameHTML(){
   }else if(q.t==='spell'){
     area=`<form class="spell" id="spellf" autocomplete="off"><input id="spin" aria-label="Skriv namnet" placeholder="Skriv här…" ${lock?'disabled':''} value="${lock?esc(G.res.typed||''):''}" spellcheck="false" autocapitalize="words"><button class="btn" ${lock?'disabled':''}>Svara</button></form>
       ${lock?'':`<div class="keys">${['å','ä','ö','Å','Ä','Ö'].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join('')}<button type="button" class="btn ghost" id="hint" style="width:auto;height:38px;font-size:1rem;padding:0 .8rem">Ledtråd</button></div><p class="pencil small" id="hinttxt"></p>`}`;
+  }else if(q.t==='drag'){
+    const D=G.drag,tot=FEAT.filter(f=>f.c===q.c).length;
+    area=`<p class="help">Dra en lapp till rätt prick. På mobilen kan du också trycka på en lapp och sedan på kartan.</p>
+      <div class="dragcount">På plats: <b>${D.placed.length}</b> av ${tot} · Fel försök: <b>${D.wrong}</b></div><p class="dragmsg" id="dmsg">${esc(D.msg||'')}</p>`;
   }else if(q.t==='find'){
     area=`<p class="help">${hidden?'Tryck på kartan där du tror att den ligger.':'Tryck på rätt prick eller tecken på kartan.'}</p>`;
   }
@@ -590,7 +611,8 @@ function gameHTML(){
     const r=G.res,ok=r.ok;
     let say=ok?(r.near?'Nästan rätt!':pick(['Rätt!','Snyggt!','Helt rätt!','Bra!'])):(r.timeout?'Tiden tog slut!':'Inte riktigt.');
     let more='';
-    if(r.near)more=`Det stavas <b>${esc(q.show)}</b>.`;
+    if(q.t==='drag'){say=ok?(G.drag.wrong?'Alla på plats!':'Alla rätt på första försöket!'):'Alla på plats till slut!';more=G.drag.wrong?`Du hade ${G.drag.wrong} fel försök${ok?'':', så den här räknas inte som rätt. Öva på platserna efteråt'}.`:''}
+    else if(r.near)more=`Det stavas <b>${esc(q.show)}</b>.`;
     else if(!ok)more=`Rätt svar: <b>${esc(q.show)}</b>${q.f&&q.t!=='find'?'':''}.`;
     else if(q.t==='find'||q.t==='name'||q.t==='spell')more=`${esc(q.f.name)} är ${KIND_A[q.f.kind].toLowerCase()} i ${C[q.c].name}.`;
     const last=G.variant==='treliv'?(G.lives<=0||G.i>=G.qs.length-1):G.i>=G.qs.length-1;
@@ -600,7 +622,7 @@ function gameHTML(){
   return `<div class="bar"><div class="row"><span class="stat">Fråga ${G.i+1}${total}</span><span class="stat">Rätt: ${G.score}</span>${G.variant!=='normal'?`<span class="badge">${v.name}</span>`:''}</div>
     <div class="row">${status}<button class="btn ghost" id="quit" style="font-size:.95rem;padding:.2rem .7rem">Avsluta</button></div></div>
   <div class="grid2">
-    <div class="sheet mapwrap ${q.t==='find'&&!lock?'clickable':''}" id="gmap">${map}</div>
+    <div class="sheet mapwrap ${(q.t==='find'||q.t==='drag')&&!lock?'clickable':''}" id="gmap">${map}</div>
     <div>
       <div class="method">${methodName} · ${G.ch==='all'||q.t==='country'||q.t==='flag'?'Norden':C[q.c].name}</div>
       <p class="prompt">${esc(q.prompt)}</p>
@@ -622,6 +644,7 @@ function bindGame(){
       resolve(f.id===q.f.id,{clicked:f.id,cross:hidden&&f.id!==q.f.id?[p.x,p.y]:null});
     });
   }
+  if(q.t==='drag'&&!G.res)bindDrag(q);
   const form=$('#spellf');
   if(form&&!G.res){
     const inp=$('#spin');setTimeout(()=>inp.focus(),30);
@@ -642,16 +665,18 @@ function resolve(ok,info={}){
   const q=G.qs[G.i];
   G.res={ok,...info};G.answered++;
   if(ok)G.score++;
-  else{G.lives--;if(!G.missed.find(m=>m.key===q.key))G.missed.push({key:q.key,q:q.prompt,show:q.show,f:q.f&&q.f.id})}
+  else{G.lives--;
+    if(q.t==='drag')G.drag.missF.forEach(id=>{const f=FBY[id];if(!G.missed.find(m=>m.key==='f:'+id))G.missed.push({key:'f:'+id,q:`Var ligger ${lab(f)}?`,show:f.name,f:id})});
+    else if(!G.missed.find(m=>m.key===q.key))G.missed.push({key:q.key,q:q.prompt,show:q.show,f:q.f&&q.f.id})}
   render();
 }
 function next(){
   const end=G.variant==='treliv'?(G.lives<=0||G.i>=G.qs.length-1):G.i>=G.qs.length-1;
   if(end){finish();return}
-  G.i++;G.res=null;render();window.scrollTo({top:0,behavior:'smooth'});
+  G.i++;G.res=null;newDrag();render();window.scrollTo({top:0,behavior:'smooth'});
 }
-function startTimer(){stopTimer();if(!G||G.variant!=='blixt')return;let t=15;
-  timerId=setInterval(()=>{t-=.1;const b=$('#tbar');if(b)b.style.width=Math.max(0,t/15*100)+'%';if(t<=0){stopTimer();resolve(false,{timeout:true})}},100)}
+function startTimer(){stopTimer();if(!G||G.variant!=='blixt')return;const dur=G.qs[G.i].t==='drag'?90:15;let t=G.tleft??dur;
+  timerId=setInterval(()=>{t-=.1;G.tleft=t;const b=$('#tbar');if(b)b.style.width=Math.max(0,t/dur*100)+'%';if(t<=0){stopTimer();resolve(false,{timeout:true})}},100)}
 function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
 function finish(){
   const st=store.get();st.best=st.best||{};
@@ -694,6 +719,39 @@ function bindResult(){
   $('#vary').onclick=()=>{setup.variant=pick(TWISTS.filter(t=>t!==G.variant));view='setup';render();window.scrollTo({top:0})};
   const p=$('#practice');if(p)p.onclick=()=>startGame(missedKeys);
   $('#tostudy').onclick=()=>{view='study';if(G.ch!=='all')studyC=G.ch;G=null;render()};
+}
+
+/* ---------- DRAG & DROP ---------- */
+function newDrag(){if(G){G.drag={placed:[],wrong:0,missF:[],sel:null,msg:'',cross:null,order:null};G.tleft=null}}
+function shuffleOnce(list){const D=G.drag;if(!D.order)D.order=shuffle(list.map(f=>f.id));return D.order.filter(id=>list.some(f=>f.id===id)).map(id=>FBY[id])}
+function dropAt(q,id,p){
+  const D=G.drag,f=nearest(q.c,p.x,p.y,36);
+  D.sel=null;D.cross=null;
+  if(!f){D.msg='Släpp lappen närmare en prick eller ett tecken.';render();return}
+  if(D.placed.includes(f.id)){D.msg=`Där sitter redan ${f.name}.`;render();return}
+  if(f.id===id){D.placed.push(id);D.msg='';
+    if(D.placed.length===FEAT.filter(x=>x.c===q.c).length){stopTimer();resolve(D.wrong<=2,{});return}}
+  else{D.wrong++;if(!D.missF.includes(id))D.missF.push(id);D.cross=[p.x,p.y];D.msg=`${FBY[id].name} ligger inte där. Försök igen!`}
+  render();
+}
+function bindDrag(q){
+  const svg=$('#gmap svg'),D=G.drag;let ghost=null,dragId=null,moved=false,sx=0,sy=0;
+  const end=()=>{if(ghost){ghost.remove();ghost=null}dragId=null};
+  document.querySelectorAll('.chip').forEach(ch=>{
+    const id=ch.dataset.id;
+    ch.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();dragId=id;moved=false;sx=e.clientX;sy=e.clientY;try{ch.setPointerCapture(e.pointerId)}catch(_){}});
+    ch.addEventListener('pointermove',e=>{if(dragId!==id)return;
+      if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)>6){moved=true;ghost=document.createElement('div');ghost.className='ghost';ghost.textContent=FBY[id].name;document.body.appendChild(ghost)}
+      if(ghost){ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px'}});
+    ch.addEventListener('pointerup',e=>{if(dragId!==id)return;const wasMoved=moved;end();
+      if(wasMoved){const r=svg.getBoundingClientRect();
+        if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)dropAt(q,id,svgPoint(svg,e));}
+      else{D.sel=D.sel===id?null:id;D.msg=D.sel?`Tryck nu på kartan där ${FBY[id].name} ligger.`:'';
+        document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.dataset.id===D.sel));const m=$('#dmsg');if(m)m.textContent=D.msg}});
+    ch.addEventListener('pointercancel',end);
+    ch.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();D.sel=id;D.msg=`Tryck nu på kartan där ${FBY[id].name} ligger.`;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.dataset.id===D.sel));const m=$('#dmsg');if(m)m.textContent=D.msg}});
+  });
+  svg.addEventListener('click',e=>{if(G.res||!D.sel)return;dropAt(q,D.sel,svgPoint(svg,e))});
 }
 
 document.addEventListener('keydown',e=>{
