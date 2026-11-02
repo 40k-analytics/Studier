@@ -1,0 +1,708 @@
+<title>Norden-häftet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* Layout: one ruled notebook page on a desk, binder holes + red margin; printed worksheet caps for headings, ballpoint handwriting for everything you "write"; maps hatched like the stencilled sheets */
+:root{
+  --desk:#d7dde5; --paper:#fdfdf8; --paper-2:#eef0ea; --rule:#cbd9ee; --margin:#e79a9a; --edge:#c9ccd2;
+  --ink:#233f8e; --ink-soft:#6476ad; --pencil:#5c6068; --red:#c4372b; --green:#2b7f43;
+  --hl:rgba(255,232,48,.62); --tape:rgba(198,214,236,.75); --shadow:rgba(30,40,60,.18); --hole:#c3c8d0;
+  --f-print:"Archivo Black","Arial Black",Impact,sans-serif;
+  --f-hand:"Kalam","Segoe Print","Comic Sans MS",cursive;
+  --f-body:"Patrick Hand","Segoe Print","Comic Sans MS",cursive;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --desk:#101319; --paper:#1d2230; --paper-2:#252b3b; --rule:#2c3652; --margin:#7c3b45; --edge:#2a3040;
+  --ink:#b2c3ff; --ink-soft:#8191c4; --pencil:#a3a9b6; --red:#ff7f6e; --green:#71d58e;
+  --hl:rgba(255,222,60,.32); --tape:rgba(120,140,180,.35); --shadow:rgba(0,0,0,.5); --hole:#30374a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --desk:#101319; --paper:#1d2230; --paper-2:#252b3b; --rule:#2c3652; --margin:#7c3b45; --edge:#2a3040;
+  --ink:#b2c3ff; --ink-soft:#8191c4; --pencil:#a3a9b6; --red:#ff7f6e; --green:#71d58e;
+  --hl:rgba(255,222,60,.32); --tape:rgba(120,140,180,.35); --shadow:rgba(0,0,0,.5); --hole:#30374a; color-scheme:dark }
+
+*{box-sizing:border-box}
+html{font-size:18px}
+body{background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size:1rem;line-height:1.45;
+  padding-block:22px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px dashed var(--red);outline-offset:3px}
+
+.page{position:relative;max-width:1080px;margin:0 auto;background-color:var(--paper);
+  background-image:linear-gradient(90deg,transparent 58px,var(--margin) 58px,var(--margin) 60px,transparent 60px),
+    repeating-linear-gradient(to bottom,transparent 0,transparent 33px,var(--rule) 33px,var(--rule) 34px);
+  padding:24px 28px 40px 86px;border-radius:4px;box-shadow:0 1px 0 var(--edge),0 12px 30px var(--shadow)}
+.page::before{content:"";position:absolute;left:16px;top:18px;bottom:18px;width:26px;
+  background:radial-gradient(circle,var(--desk) 0 8px,var(--hole) 8px 9.5px,transparent 10px) center 10px/26px 72px repeat-y}
+
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.brand h1{font-family:var(--f-print);font-size:2.4rem;letter-spacing:.02em;margin:0;line-height:1;color:var(--ink)}
+.brand p{margin:.25rem 0 0;font-family:var(--f-hand);color:var(--pencil);font-size:1.05rem}
+.tabs{display:flex;gap:8px}
+.tab{border:2px solid var(--ink);background:var(--paper);padding:.3rem 1.1rem .2rem;border-radius:10px 12px 4px 4px;
+  font-family:var(--f-hand);font-weight:700;font-size:1.15rem;border-bottom-width:4px}
+.tab[aria-pressed="true"]{background:var(--hl);}
+
+h2.print{font-family:var(--f-print);font-size:2rem;margin:0;line-height:1;letter-spacing:.02em;text-wrap:balance}
+.hand{font-family:var(--f-hand)}
+.pencil{color:var(--pencil)}
+.small{font-size:.85rem}
+.eyebrow{font-family:var(--f-print);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--pencil)}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start}
+.grid2>*{min-width:0}
+@media (max-width:780px){.grid2{grid-template-columns:1fr}}
+
+.sheet{position:relative;background:var(--paper);border:2px solid var(--ink);padding:6px;transform:rotate(-.5deg);box-shadow:3px 4px 0 var(--paper-2)}
+.sheet::before{content:"";position:absolute;top:-13px;left:38%;width:96px;height:26px;background:var(--tape);transform:rotate(-4deg);z-index:2}
+svg.map{display:block;width:100%;height:auto;max-height:76vh;margin:0 auto;touch-action:manipulation}
+.mapwrap.clickable svg.map{cursor:crosshair}
+.blank{display:grid;place-items:center;min-height:300px;font-family:var(--f-hand);color:var(--pencil);font-size:1.3rem;text-align:center;padding:20px}
+
+/* svg styling */
+.sea-bg{fill:var(--paper)} .hatch{fill:none;stroke:var(--ink);stroke-width:.7;opacity:.42}
+.land{fill:var(--paper);stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+.nb{fill:var(--paper-2);stroke:var(--pencil);stroke-width:1.2;stroke-linejoin:round;opacity:.9}
+.nbl{font-family:var(--f-print);font-size:11px;letter-spacing:.18em;fill:var(--pencil);opacity:.8}
+.lake{fill:url(#sea);stroke:var(--ink);stroke-width:1.3}
+.glac{fill:var(--paper);stroke:var(--ink);stroke-width:1.4;stroke-dasharray:4 3}
+.river{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fjord{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.hlfill{fill:var(--hl);stroke:none}
+.hlline{fill:none;stroke:var(--hl);stroke-width:12;stroke-linecap:round;stroke-linejoin:round}
+.hlc{fill:var(--hl)}
+.pulse{fill:none;stroke:var(--red);stroke-width:2;stroke-dasharray:5 4;animation:spin 6s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.m-dot{fill:var(--ink)} .m-tri{fill:var(--ink)} .m-ring{fill:var(--paper);stroke:var(--ink);stroke-width:2}
+.m-wave{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round}
+.num{font-family:var(--f-hand);font-size:15px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:4px}
+.lbl{font-family:var(--f-body);font-size:17px;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round}
+.lbl.good{fill:var(--green)} .lbl.bad{fill:var(--red)}
+.ring-good{fill:none;stroke:var(--green);stroke-width:3}
+.ring-bad{fill:none;stroke:var(--red);stroke-width:3}
+.cross{stroke:var(--red);stroke-width:3;stroke-linecap:round}
+.frame{fill:none;stroke:var(--ink);stroke-width:2.5}
+.scale{font-family:var(--f-print);font-size:10px;fill:var(--ink)}
+.scale-line{stroke:var(--ink);stroke-width:1.5}
+.scale-box{fill:var(--paper);opacity:.92}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+
+/* study */
+.chapters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+.chap{display:flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--paper);border-radius:6px;padding:.3rem .7rem;font-family:var(--f-print);font-size:.8rem;letter-spacing:.06em}
+.chap[aria-pressed="true"]{background:var(--hl)}
+.chap .pg{font-family:var(--f-hand);font-weight:400;color:var(--pencil);letter-spacing:0;font-size:.9rem}
+.flag{display:inline-block;vertical-align:middle;border:1px solid var(--pencil)}
+.ctitle{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+.toggle{display:inline-flex;align-items:center;gap:8px;border:2px dashed var(--ink-soft);border-radius:8px;padding:.25rem .7rem;background:transparent;font-family:var(--f-hand)}
+.toggle[aria-pressed="true"]{border-style:solid;border-color:var(--ink);background:var(--hl)}
+.legend h4{margin:14px 0 2px;font-family:var(--f-hand);font-size:1.15rem;text-decoration:underline wavy;text-underline-offset:5px;text-decoration-thickness:1.5px}
+.li{display:flex;gap:10px;width:100%;text-align:left;border:0;background:transparent;padding:2px 6px;border-bottom:1px solid var(--rule);font-size:1.15rem;font-family:var(--f-hand);border-radius:3px}
+.li:hover{background:var(--paper-2)}
+.li.sel{background:var(--hl)}
+.li .n{width:2.1em;flex:none;color:var(--ink-soft)}
+.li .x{margin-left:auto;color:var(--pencil);font-size:.95rem}
+.covered{color:transparent!important;border-radius:3px;background:repeating-linear-gradient(-55deg,var(--pencil) 0 2px,transparent 2px 6px);opacity:.55;min-width:6em;display:inline-block}
+.facts{margin:18px 0 0;padding:0;list-style:none}
+.facts li{padding:3px 0 3px 22px;position:relative;font-size:1.05rem}
+.facts li::before{content:"";position:absolute;left:4px;top:.75em;width:8px;height:8px;border-radius:50%;border:2px solid var(--red)}
+
+/* buttons */
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--paper);font-family:var(--f-hand);font-weight:700;font-size:1.15rem;
+  padding:.45rem 1.2rem .35rem;border-radius:12px 8px 14px 9px;display:inline-flex;align-items:center;gap:8px;box-shadow:2px 3px 0 var(--ink-soft)}
+.btn:active{transform:translate(2px,3px);box-shadow:none}
+.btn.ghost{background:var(--paper);color:var(--ink)}
+.btn.hl{background:var(--hl);color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* game */
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 20px}
+.pick{border:2px solid var(--ink);background:var(--paper);border-radius:8px 12px 7px 10px;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.pick[aria-pressed="true"]{background:var(--hl);box-shadow:3px 3px 0 var(--ink)}
+.pick b{font-family:var(--f-print);font-size:.85rem;letter-spacing:.06em}
+.pick .flags{display:flex;gap:4px}
+.pick .best{font-size:.9rem;color:var(--pencil)}
+.varnote{border:2px dashed var(--ink-soft);border-radius:10px;padding:10px 14px;margin:6px 0 20px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.varnote .vn{font-family:var(--f-hand);font-size:1.2rem;font-weight:700}
+.bar{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;margin-bottom:16px;font-family:var(--f-hand);font-size:1.1rem}
+.bar .stat{font-variant-numeric:tabular-nums}
+.badge{font-family:var(--f-print);font-size:.7rem;letter-spacing:.1em;border:2px solid var(--red);color:var(--red);padding:2px 8px;border-radius:4px;transform:rotate(-2deg);display:inline-block}
+.timer{height:8px;border:1.5px solid var(--ink);border-radius:4px;overflow:hidden;width:160px}
+.timer i{display:block;height:100%;background:var(--red);width:100%}
+.hearts svg{width:22px;height:22px;margin-right:2px}
+.method{font-family:var(--f-print);font-size:.7rem;letter-spacing:.14em;color:var(--red);text-transform:uppercase}
+.prompt{font-family:var(--f-hand);font-weight:700;font-size:1.7rem;line-height:1.2;margin:.2rem 0 .9rem;text-wrap:balance}
+.help{color:var(--pencil);margin:0 0 12px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:440px){.opts{grid-template-columns:1fr}}
+.opt{border:2px solid var(--ink);background:var(--paper);border-radius:9px 13px 8px 12px;padding:.55rem .8rem;font-size:1.25rem;text-align:left;display:flex;gap:10px;align-items:center;min-height:52px}
+.opt:hover:not(:disabled){background:var(--paper-2)}
+.opt .k{font-family:var(--f-print);font-size:.7rem;color:var(--ink-soft);border:1.5px solid var(--ink-soft);border-radius:50%;width:22px;height:22px;display:grid;place-items:center;flex:none}
+.opt.good{border-color:var(--green);color:var(--green);background:var(--paper)}
+.opt.bad{border-color:var(--red);color:var(--red);text-decoration:line-through;text-decoration-thickness:2px}
+.opt:disabled{cursor:default}
+.spell{display:flex;gap:10px;flex-wrap:wrap}
+.spell input{flex:1 1 200px;min-width:0;border:0;border-bottom:3px solid var(--ink);background:transparent;font-family:var(--f-hand);font-size:1.8rem;padding:2px 4px;outline:none}
+.spell input:focus{background:var(--hl)}
+.keys{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.keys button{border:1.5px solid var(--ink-soft);background:var(--paper);border-radius:6px;width:42px;height:38px;font-size:1.2rem}
+.bigflag{margin:6px 0 16px}
+.fb{margin-top:18px;padding:12px 16px;border-left:4px solid currentColor;background:var(--paper);display:flex;flex-direction:column;gap:10px}
+.fb .say{font-family:var(--f-hand);font-weight:700;font-size:1.6rem;line-height:1.15;transform:rotate(-1.2deg);transform-origin:left}
+.fb.good{color:var(--green)} .fb.bad{color:var(--red)}
+.fb .more{color:var(--ink);font-size:1.05rem}
+
+/* result */
+.result{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px 36px;align-items:center}
+@media (max-width:640px){.result{grid-template-columns:1fr}}
+.grade{position:relative;width:200px;height:150px;display:grid;place-items:center;color:var(--red)}
+.grade svg{position:absolute;inset:0;width:100%;height:100%}
+.grade .sc{font-family:var(--f-hand);font-weight:700;font-size:3rem;line-height:1;font-variant-numeric:tabular-nums}
+.stars svg{width:44px;height:44px}
+.comment{font-family:var(--f-hand);font-weight:700;color:var(--red);font-size:1.8rem;transform:rotate(-2deg);display:inline-block;margin:6px 0}
+.missed{margin:8px 0 0;padding:0;list-style:none}
+.missed li{border-bottom:1px solid var(--rule);padding:4px 0;font-size:1.1rem;display:flex;gap:8px;flex-wrap:wrap}
+.missed .ans{color:var(--green);font-weight:700}
+.mt{margin-top:22px}
+
+@media (max-width:640px){
+  .page{padding:18px 14px 30px 44px;background-image:linear-gradient(90deg,transparent 32px,var(--margin) 32px,var(--margin) 34px,transparent 34px),
+    repeating-linear-gradient(to bottom,transparent 0,transparent 33px,var(--rule) 33px,var(--rule) 34px)}
+  .page::before{left:6px;width:20px;background-size:20px 64px;background-image:radial-gradient(circle,var(--desk) 0 6px,var(--hole) 6px 7.5px,transparent 8px)}
+  .brand h1{font-size:1.9rem}
+  .prompt{font-size:1.45rem}
+}
+</style>
+
+<div class="page" id="app"></div>
+
+<script>
+/* ===================== DATA ===================== */
+const K=Math.PI/180;
+const R_FI=[[27.8,60.55],[29.3,61.3],[31.0,62.3],[31.6,62.9],[30.0,63.7],[29.6,64.8],[30.1,65.2],[29.1,66.0],[29.9,66.9],[29.0,67.6],[28.7,68.2],[28.4,68.5],[28.93,69.05]];
+const S_NOFI=[[28.93,69.05],[28.4,69.8],[27.9,70.08],[27.0,69.9],[25.85,69.45],[25.75,68.95],[24.9,68.6],[23.9,68.8],[22.4,68.7],[21.3,69.25],[20.55,69.06]];
+const F_SW=[[20.55,69.06],[21.0,68.8],[22.0,68.45],[22.8,68.3],[23.6,67.9],[23.5,67.2],[23.7,66.6],[24.15,65.85]];
+const N_SW=[[20.55,69.06],[18.1,68.5],[17.9,67.95],[16.4,67.5],[15.4,66.5],[14.5,66.1],[14.0,65.0],[13.6,64.6],[14.1,64.2],[12.2,63.5],[12.1,62.5],[12.3,61.0],[12.6,60.5],[11.8,59.9],[11.4,59.1],[11.25,59.1]];
+const FIN=[[22.95,59.82],[23.5,60.0],[24.95,60.15],[26.0,60.4],[26.9,60.45],...R_FI,...S_NOFI.slice(1),...F_SW.slice(1),
+ [24.55,65.73],[25.3,65.4],[25.47,65.01],[24.48,64.68],[23.9,64.2],[23.1,63.84],[22.3,63.4],[21.6,63.1],[21.3,62.5],[21.5,61.6],[21.45,61.1],[21.3,60.7],[21.7,60.5],[22.25,60.45],[22.5,60.15]];
+const ALAND=[[19.5,60.15],[19.7,60.45],[20.2,60.5],[20.55,60.3],[20.3,60.0],[19.85,59.98]];
+const NOR=[[11.0,59.05],[10.3,59.0],[9.6,58.95],[8.8,58.5],[8.0,58.1],[7.05,57.98],[6.2,58.3],[5.55,58.75],[5.65,59.3],[5.2,59.6],[5.05,60.1],[4.95,60.8],[5.0,61.6],[5.1,62.2],[6.2,62.55],[7.0,62.95],[8.0,63.35],[9.0,63.65],[10.0,64.0],[10.8,64.6],[11.9,65.3],[12.5,66.0],[13.2,66.8],[14.3,67.3],[15.0,67.9],[15.7,68.3],[16.5,68.9],[17.5,69.25],[18.95,69.75],[20.5,70.0],[22.0,70.3],[23.7,70.7],[25.7,71.15],[27.6,71.1],[28.5,70.95],[30.0,70.6],[31.1,70.37],[29.7,70.2],[28.6,70.15],[29.5,69.9],[30.8,69.78],[29.3,69.4],...S_NOFI,...N_SW.slice(1)];
+const SWE=[[24.15,65.85],[22.15,65.58],[21.2,64.75],[20.3,63.8],[17.3,62.4],[17.15,60.67],[18.6,60.2],[18.1,59.33],[17.0,58.7],[16.5,57.5],[16.36,56.66],[15.6,56.15],[14.6,56.05],[14.2,55.4],[13.15,55.37],[12.85,55.55],[12.95,55.9],[12.6,56.25],[12.85,56.6],[11.95,57.7],[11.2,58.4],...N_SW.slice().reverse(),...F_SW.slice(1)];
+const RUS=[...R_FI,[29.3,69.4],[30.8,69.78],[33,69.4],[40,69],[40,59.4],[30.2,59.9],[29.0,60.15]];
+const EST=[[23.4,59.25],[25,59.55],[28.0,59.45],[28.2,57.5],[23.4,57.5]];
+const GER=[[8.65,54.9],[9.43,54.8],[10.2,54.4],[11.0,54.45],[11.1,54.0],[12.0,54.18],[13.2,54.6],[14.3,53.9],[16,53.5],[16,52.5],[7.5,52.5],[8.6,54.0]];
+const JYL=[[10.6,57.75],[10.55,57.45],[10.35,57.15],[10.3,56.98],[10.25,56.6],[10.9,56.45],[10.6,56.2],[10.2,56.15],[10.0,55.85],[9.75,55.7],[9.7,55.55],[9.55,55.45],[9.65,55.2],[9.6,55.0],[9.43,54.82],[8.65,54.9],[8.6,55.15],[8.4,55.45],[8.1,55.55],[8.15,56.0],[8.1,56.5],[8.25,56.85],[8.6,57.12],[9.4,57.15],[9.96,57.59]];
+const FYN=[[9.85,55.5],[10.1,55.6],[10.5,55.55],[10.75,55.35],[10.8,55.1],[10.6,55.03],[10.2,55.05],[9.95,55.2],[9.85,55.35]];
+const SJA=[[12.6,56.03],[12.55,55.7],[12.25,55.45],[12.45,55.3],[12.1,55.15],[11.75,55.05],[11.25,55.2],[11.1,55.35],[11.1,55.7],[11.4,55.95],[11.8,55.75],[11.95,55.95],[12.3,56.12]];
+const LOL=[[11.0,54.85],[11.4,54.95],[11.85,54.9],[11.75,54.65],[11.3,54.68],[11.0,54.75]];
+const BOR=[[14.7,55.3],[15.15,55.13],[15.08,54.99],[14.72,55.08],[14.68,55.2]];
+const ISL=[[22.7,63.85],[21.6,63.85],[20.6,63.75],[19.8,63.5],[19.0,63.4],[18.0,63.5],[17.0,63.75],[16.3,63.85],[15.5,64.25],[14.6,64.4],[14.2,64.75],[13.6,65.1],[13.65,65.5],[14.5,65.75],[14.55,66.38],[15.2,66.15],[16.0,66.53],[16.6,66.1],[17.5,66.2],[17.9,66.1],[18.1,65.72],[18.35,66.15],[19.4,66.1],[20.1,65.75],[20.4,65.65],[21.1,65.6],[21.3,66.0],[22.4,66.45],[23.5,66.2],[24.4,65.6],[23.0,65.35],[22.3,65.1],[24.05,64.85],[22.4,64.8],[21.9,64.4],[21.9,64.15],[22.4,64.05]];
+const HEIM=[[20.15,63.4],[20.4,63.38],[20.42,63.47],[20.18,63.48]];
+
+const C={
+ fi:{id:'fi',name:'Finland',caps:'FINLAND',page:7,latc:64.5,scale:'Skala 1 : 6 000 000',bar:[100,200],barAt:[.05,.05],capital:'Helsingfors',
+   land:[{id:'fin',pts:FIN},{id:'aland',pts:ALAND}],nb:[SWE,RUS,NOR,EST],
+   nbl:[['SVERIGE',20.9,67.4],['RYSSLAND',30.7,64.3],['NORGE',24.0,69.8]],
+   lakes:[[[25.5,61.1],[25.65,61.5],[25.6,62.0],[25.45,61.9],[25.4,61.4]],[[27.5,61.1],[28.4,61.2],[29.0,61.9],[28.6,62.2],[28.0,61.7],[27.6,61.5]],[[26.9,64.2],[27.6,64.25],[27.8,64.45],[27.2,64.45]],[[23.65,61.55],[23.9,61.9],[24.05,61.8],[23.85,61.55]]],
+   lines:[{id:'torne',cls:'river',pts:[[22.0,68.45],[22.8,68.3],[23.6,67.9],[23.5,67.2],[23.7,66.6],[24.15,65.85]]},
+          {id:'kemi',cls:'river',pts:[[28.6,67.7],[27.43,66.71],[26.6,66.57],[25.73,66.5],[25.2,66.1],[24.55,65.73]]}],
+   glac:[],
+   facts:['Huvudstaden heter Helsingfors (Helsinki på finska).','Bastu heter sauna på finska. Det finns miljontals bastur i Finland.','Torneälven är gränsälv mellan Sverige och Finland.','Åland är en ögrupp som hör till Finland. Där pratar man svenska.','Finland kallas "de tusen sjöarnas land".']},
+ dk:{id:'dk',name:'Danmark',caps:'DANMARK',page:5,latc:56,scale:'Skala 1 : 3 000 000',bar:[50,100],barAt:[.62,.9],capital:'Köpenhamn',
+   land:[{id:'jyl',pts:JYL},{id:'fyn',pts:FYN},{id:'sja',pts:SJA},{id:'lol',pts:LOL},{id:'bor',pts:BOR}],nb:[SWE,GER],
+   nbl:[['SVERIGE',13.6,56.35],['TYSKLAND',9.2,54.45]],lakes:[],
+   lines:[{id:'limf',cls:'fjord',pts:[[8.17,56.7],[8.6,56.6],[9.0,56.8],[9.4,57.0],[9.92,57.05],[10.3,56.98]]}],glac:[],
+   facts:['Huvudstaden heter Köpenhamn (København på danska).','Den lilla sjöjungfrun (Den lille havfrue) sitter på en sten i Köpenhamns hamn.','Den kongelige livgarde vaktar kungens slott i Köpenhamn.','Jylland är en halvö. Resten av Danmark är mest öar.','Öresundsbron går över Öresund mellan Köpenhamn och Malmö.']},
+ no:{id:'no',name:'Norge',caps:'NORGE',page:15,latc:65,scale:'Skala 1 : 7 000 000',bar:[100,200],barAt:[.05,.05],capital:'Oslo',
+   land:[{id:'nor',pts:NOR}],nb:[SWE,FIN,RUS],
+   nbl:[['SVERIGE',15.8,63.6],['FINLAND',26.4,67.3],['RYSSLAND',31.6,68.3]],lakes:[],
+   lines:[{id:'oslof',cls:'fjord',pts:[[10.62,59.02],[10.55,59.4],[10.65,59.7],[10.73,59.88]]},
+          {id:'hard',cls:'fjord',pts:[[5.1,59.9],[5.6,60.0],[6.2,60.28],[6.6,60.42]]},
+          {id:'trof',cls:'fjord',pts:[[9.0,63.65],[9.5,63.62],[9.9,63.5],[10.4,63.46],[10.9,63.62],[11.3,63.85]]},
+          {id:'ofot',cls:'fjord',pts:[[15.85,68.35],[16.6,68.4],[17.4,68.44]]},
+          {id:'glom',cls:'river',pts:[[11.4,62.6],[10.8,62.3],[11.2,61.5],[11.56,60.88],[12.0,60.19],[11.5,59.75],[11.1,59.28],[10.95,59.15]]}],glac:[],
+   facts:['Huvudstaden heter Oslo.','Galdhöpiggen är Norges högsta berg, 2 469 meter högt.','Fjordar är långa, smala havsvikar mellan höga berg.','Ute i havet står oljeplattformar som borrar efter olja och gas.','Glomma är Norges längsta älv.']},
+ is:{id:'is',name:'Island',caps:'ISLAND',page:null,latc:65,west:true,scale:'Skala 1 : 4 500 000',bar:[50,100],barAt:[.03,.04],capital:'Reykjavik',
+   land:[{id:'isl',pts:ISL},{id:'heim',pts:HEIM}],nb:[],nbl:[],lakes:[],lines:[],
+   glac:[{id:'vatna',pts:[[15.6,64.3],[16.0,64.65],[16.8,64.75],[17.6,64.62],[18.0,64.45],[17.4,64.2],[16.6,64.15],[16.1,64.05]]},
+         {id:'lang',pts:[[19.85,64.55],[20.35,64.5],[20.5,64.72],[20.1,64.8],[19.9,64.7]]},
+         {id:'hofs',pts:[[18.55,64.75],[18.95,64.7],[19.1,64.85],[18.7,64.92]]}],
+   facts:['Huvudstaden heter Reykjavik.','Vatnajökull är Islands största glaciär.','Hekla är en känd vulkan som har haft många utbrott.','Islandshästen är liten och tålig och har en extra gångart som heter tölt.','På Hemön fick alla flytta när en vulkan fick utbrott 1973.']}
+};
+const CIDS=['fi','dk','no','is'];
+
+const F=(c,n,name,kind,at,o={})=>({id:c+n,c,n,name,kind,at,alt:o.alt||[],shape:o.shape,extra:o.extra});
+const FEAT=[
+ F('fi',1,'Rovaniemi','Stad',[25.73,66.5]),
+ F('fi',2,'Torneå','Stad',[24.15,65.85],{alt:['Tornio']}),
+ F('fi',3,'Uleåborg','Stad',[25.47,65.01],{alt:['Oulu']}),
+ F('fi',4,'Vasa','Stad',[21.62,63.1],{alt:['Vaasa']}),
+ F('fi',5,'Åbo','Stad',[22.27,60.45],{alt:['Turku']}),
+ F('fi',6,'Helsingfors','Stad',[24.94,60.17],{alt:['Helsinki']}),
+ F('fi',7,'Tammerfors','Stad',[23.76,61.5],{alt:['Tampere']}),
+ F('fi',8,'Mariehamn','Stad',[19.94,60.1],{alt:['Maarianhamina']}),
+ F('fi',9,'Åland','Ö',[20.3,60.33],{shape:'aland',alt:['Ahvenanmaa']}),
+ F('fi',10,'Torneälven','Älv',[23.55,67.45],{shape:'torne',alt:['Torne älv','Tornionjoki']}),
+ F('fi',11,'Kemiälven','Älv',[26.6,66.57],{shape:'kemi',alt:['Kemi älv','Kemijoki']}),
+ F('fi',12,'Finska viken','Vatten',[25.6,59.88]),
+ F('dk',1,'Ålborg','Stad',[9.92,57.05],{alt:['Aalborg']}),
+ F('dk',2,'Århus','Stad',[10.2,56.16],{alt:['Aarhus']}),
+ F('dk',3,'Esbjerg','Stad',[8.45,55.47]),
+ F('dk',4,'Odense','Stad',[10.39,55.4]),
+ F('dk',5,'Helsingör','Stad',[12.6,56.03],{alt:['Helsingør']}),
+ F('dk',6,'Köpenhamn','Stad',[12.57,55.68],{alt:['København']}),
+ F('dk',7,'Fyn','Ö',[10.2,55.2],{shape:'fyn',alt:['Fünen']}),
+ F('dk',8,'Själland','Ö',[11.7,55.45],{shape:'sja',alt:['Sjælland']}),
+ F('dk',9,'Lolland','Ö',[11.4,54.8],{shape:'lol'}),
+ F('dk',10,'Bornholm','Ö',[14.92,55.15],{shape:'bor'}),
+ F('dk',11,'Jylland','Halvö',[9.0,56.2],{shape:'jyl',alt:['Jutland']}),
+ F('dk',12,'Stora bält','Vatten',[10.9,55.45],{alt:['Storebælt','Stora Bält']}),
+ F('dk',13,'Lilla bält','Vatten',[9.76,55.35],{alt:['Lillebælt']}),
+ F('dk',14,'Öresund','Vatten',[12.76,55.8],{alt:['Øresund']}),
+ F('dk',15,'Limfjorden','Vatten',[9.0,56.8],{shape:'limf'}),
+ F('no',1,'Narvik','Stad',[17.43,68.44]),
+ F('no',2,'Trondheim','Stad',[10.4,63.43]),
+ F('no',3,'Bergen','Stad',[5.32,60.39]),
+ F('no',4,'Stavanger','Stad',[5.73,58.97]),
+ F('no',5,'Oslo','Stad',[10.75,59.91]),
+ F('no',6,'Oslofjorden','Fjord',[10.57,59.4],{shape:'oslof'}),
+ F('no',7,'Hardangerfjorden','Fjord',[6.2,60.28],{shape:'hard'}),
+ F('no',8,'Trondheimsfjorden','Fjord',[9.5,63.62],{shape:'trof'}),
+ F('no',9,'Glomma','Älv',[11.2,61.5],{shape:'glom'}),
+ F('no',10,'Galdhöpiggen','Bergstopp',[8.31,61.64],{alt:['Galdhøpiggen','Goldhöpiggen'],extra:'2 469 m'}),
+ F('is',1,'Reykjavik','Stad',[21.9,64.15],{alt:['Reykjavík']}),
+ F('is',2,'Akureyri','Stad',[18.1,65.68]),
+ F('is',3,'Vatnajökull','Glaciär',[16.8,64.42],{shape:'vatna'}),
+ F('is',4,'Hemön','Ö',[20.28,63.43],{shape:'heim',alt:['Heimaey']}),
+ F('is',5,'Hekla','Vulkan',[19.67,63.99]),
+ F('is',6,'Atlanten','Vatten',[15.2,63.45],{alt:['Atlantiska oceanen','Atlanten havet']})
+];
+const FBY=Object.fromEntries(FEAT.map(f=>[f.id,f]));
+
+const FACTS=[
+ ['fi','Vad heter Finlands huvudstad?','Helsingfors',['Åbo','Tammerfors','Uleåborg'],'fi6'],
+ ['fi','Vilken älv är gräns mellan Sverige och Finland?','Torneälven',['Kemiälven','Glomma','Limfjorden'],'fi10'],
+ ['fi','Vilken stad ligger på Åland?','Mariehamn',['Vasa','Rovaniemi','Torneå'],'fi8'],
+ ['fi','Finland är känt för bastun. Vad heter bastu på finska?','Sauna',['Hygge','Fika','Sisu']],
+ ['fi','Vilket vatten ligger söder om Helsingfors?','Finska viken',['Öresund','Stora bält','Oslofjorden'],'fi12'],
+ ['fi','Vilken av städerna ligger längst norrut?','Rovaniemi',['Åbo','Helsingfors','Tammerfors'],'fi1'],
+ ['dk','Vad heter Danmarks huvudstad?','Köpenhamn',['Århus','Odense','Ålborg'],'dk6'],
+ ['dk','Vilken staty sitter i Köpenhamns hamn?','Den lilla sjöjungfrun',['Tummelisa','Snödrottningen','Vikingen']],
+ ['dk','Vad heter soldaterna som vaktar den danska kungens slott?','Den kongelige livgarde',['Musketörerna','Vikingarna','Riddarna']],
+ ['dk','Jylland är ingen ö. Vad är det?','En halvö',['En fjord','En glaciär','Ett sund'],'dk11'],
+ ['dk','Vilket sund ligger mellan Danmark och Sverige?','Öresund',['Lilla bält','Stora bält','Finska viken'],'dk14'],
+ ['dk','På vilken ö ligger Köpenhamn?','Själland',['Fyn','Lolland','Bornholm'],'dk8'],
+ ['dk','Vilken dansk ö ligger långt ut i Östersjön?','Bornholm',['Fyn','Själland','Lolland'],'dk10'],
+ ['dk','Vilken stad ligger på Fyn?','Odense',['Esbjerg','Ålborg','Helsingör'],'dk4'],
+ ['no','Vad heter Norges huvudstad?','Oslo',['Bergen','Trondheim','Stavanger'],'no5'],
+ ['no','Vilket är Norges högsta berg?','Galdhöpiggen',['Hekla','Vatnajökull','Kebnekaise'],'no10'],
+ ['no','Hur högt är Galdhöpiggen?','2 469 meter',['469 meter','1 469 meter','4 469 meter'],'no10'],
+ ['no','Vad borrar oljeplattformarna efter i havet utanför Norge?','Olja och gas',['Guld','Salt','Diamanter']],
+ ['no','Vad kallas de långa, smala havsvikarna i Norge?','Fjordar',['Glaciärer','Halvöar','Vulkaner']],
+ ['no','Vilken av de här städerna ligger längst norrut?','Narvik',['Bergen','Oslo','Stavanger'],'no1'],
+ ['no','Vilken är Norges längsta älv?','Glomma',['Torneälven','Kemiälven','Limfjorden'],'no9'],
+ ['is','Vad heter Islands huvudstad?','Reykjavik',['Akureyri','Hekla','Hemön'],'is1'],
+ ['is','Vilket hav ligger runt Island?','Atlanten',['Östersjön','Medelhavet','Finska viken'],'is6'],
+ ['is','Vilket djur är Island känt för?','Islandshästen',['Älgen','Kängurun','Pandan']],
+ ['is','Vilken ö ligger söder om Island?','Hemön',['Åland','Bornholm','Fyn'],'is4'],
+ ['is','Vilken stad ligger på norra Island?','Akureyri',['Reykjavik','Narvik','Torneå'],'is2'],
+ ['is','Vad är Hekla?','En vulkan',['En glaciär','En stad','En fjord'],'is5'],
+ ['is','Vad är Vatnajökull?','En glaciär',['En vulkan','En ö','En älv'],'is3']
+].map(([c,q,a,o,f],i)=>({id:i,c,q,a,o,f}));
+
+const KIND_THE={Stad:'staden ',Ö:'ön ',Älv:'älven ',Vatten:'',Halvö:'halvön ',Fjord:'',Bergstopp:'berget ',Glaciär:'glaciären ',Vulkan:'vulkanen '};
+const KIND_A={Stad:'En stad',Ö:'En ö',Älv:'En älv',Vatten:'Ett vatten (hav, vik eller sund)',Halvö:'En halvö',Fjord:'En fjord',Bergstopp:'En bergstopp',Glaciär:'En glaciär',Vulkan:'En vulkan'};
+const lab=f=>KIND_THE[f.kind]+f.name;
+
+/* ===================== MAP ===================== */
+function proj(c){
+  if(c._p)return c._p;
+  const k=Math.cos(c.latc*K),sg=c.west?-1:1;
+  const pts=[...c.land.flatMap(l=>l.pts),...FEAT.filter(f=>f.c===c.id).map(f=>f.at)];
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  pts.forEach(([lo,la])=>{const x=sg*lo*k,y=-la;x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
+  const w=x1-x0,h=y1-y0,m=Math.max(w,h),pad=m*.07,S=560/(m+2*pad);
+  return c._p={W:Math.round((w+2*pad)*S),H:Math.round((h+2*pad)*S),S,p:([lo,la])=>[(sg*lo*k-x0+pad)*S,(-la-y0+pad)*S]};
+}
+const path=(pts,P,close=true)=>'M'+pts.map(q=>P.p(q).map(v=>v.toFixed(1)).join(' ')).join('L')+(close?'Z':'');
+const shapeKind=k=>({Stad:'dot',Bergstopp:'tri',Vulkan:'tri',Ö:'ring',Halvö:'ring',Glaciär:'ring',Älv:'wave',Fjord:'wave',Vatten:'wave'})[k];
+function marker(f,P){
+  const [x,y]=P.p(f.at),s=shapeKind(f.kind);
+  if(s==='dot')return `<circle class="m-dot" cx="${x}" cy="${y}" r="5.5"/>`;
+  if(s==='tri')return `<path class="m-tri" d="M${x} ${y-8}L${x+7.5} ${y+5}L${x-7.5} ${y+5}Z"/>`;
+  if(s==='ring')return `<circle class="m-ring" cx="${x}" cy="${y}" r="6.5"/>`;
+  return `<circle class="m-ring" cx="${x}" cy="${y}" r="8"/><path class="m-wave" d="M${x-4.5} ${y}q1.1-2.4 2.25 0t2.25 0t2.25 0t2.25 0"/>`;
+}
+function textAt(x,y,W,t,cls){
+  const end=x>W*.68;
+  return `<text class="lbl ${cls||''}" x="${end?x-12:x+12}" y="${y+5}" text-anchor="${end?'end':'start'}">${t}</text>`;
+}
+function findShape(c,id){
+  const l=c.land.find(a=>a.id===id);if(l)return{t:'poly',pts:l.pts};
+  const g=c.glac.find(a=>a.id===id);if(g)return{t:'poly',pts:g.pts};
+  const ln=c.lines.find(a=>a.id===id);if(ln)return{t:'line',pts:ln.pts};
+  return null;
+}
+/* o: mode 'study'|'quiz'|'hidden', hl: featureId, reveal:[{id,cls}], cross:[x,y], names:[ids] */
+function mapSVG(cid,o={}){
+  const c=C[cid],P=proj(c),mode=o.mode||'quiz',W=P.W,H=P.H;
+  const fs=FEAT.filter(f=>f.c===cid);
+  let s=`<svg class="map" viewBox="0 0 ${W} ${H}" role="img" aria-label="Karta över ${c.name}">
+  <defs><pattern id="sea" width="7" height="6" patternUnits="userSpaceOnUse"><path class="hatch" d="M0 3q1.75-1.6 3.5 0t3.5 0"/></pattern>
+  <filter id="wob" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter>
+  <clipPath id="clip"><rect width="${W}" height="${H}"/></clipPath></defs>
+  <g clip-path="url(#clip)"><rect class="sea-bg" width="${W}" height="${H}"/><rect fill="url(#sea)" width="${W}" height="${H}"/>
+  <g filter="url(#wob)">`;
+  c.nb.forEach(n=>s+=`<path class="nb" d="${path(n,P)}"/>`);
+  c.land.forEach(l=>s+=`<path class="land" d="${path(l.pts,P)}"/>`);
+  c.lakes.forEach(l=>s+=`<path class="lake" d="${path(l,P)}"/>`);
+  c.glac.forEach(g=>s+=`<path class="glac" d="${path(g.pts,P)}"/>`);
+  s+='</g>';
+  c.nbl.forEach(([t,lo,la])=>{const[x,y]=P.p([lo,la]);s+=`<text class="nbl" x="${x}" y="${y}" text-anchor="middle">${t}</text>`});
+  // highlight shape (under lines)
+  const hf=o.hl&&FBY[o.hl];
+  const hs=hf&&hf.shape&&findShape(c,hf.shape);
+  if(hs&&hs.t==='poly')s+=`<path class="hlfill" d="${path(hs.pts,P)}"/>`;
+  if(hs&&hs.t==='line')s+=`<path class="hlline" d="${path(hs.pts,P,false)}"/>`;
+  c.lines.forEach(l=>s+=`<path class="${l.cls}" d="${path(l.pts,P,false)}"/>`);
+  if(hf){const[x,y]=P.p(hf.at);s+=`<circle class="hlc" cx="${x}" cy="${y}" r="17"/><circle class="pulse" cx="${x}" cy="${y}" r="21"/>`;}
+  // markers
+  fs.forEach(f=>{
+    if(mode==='hidden'&&!(hf&&hf.id===f.id))return;
+    s+=marker(f,P);
+    if(mode==='study'){const[x,y]=P.p(f.at);s+=`<text class="num" x="${x+8}" y="${y-8}">${f.n}.</text>`;}
+  });
+  (o.names||[]).forEach(id=>{const f=FBY[id];if(!f)return;const[x,y]=P.p(f.at);s+=textAt(x,y,W,f.name+(f.extra?' '+f.extra:''),'')});
+  (o.reveal||[]).forEach(r=>{const f=FBY[r.id];if(!f)return;const[x,y]=P.p(f.at);
+    if(mode==='hidden'&&r.cls==='good')s+=marker(f,P);
+    s+=`<circle class="ring-${r.cls}" cx="${x}" cy="${y}" r="14"/>`+textAt(x,y,W,f.name,r.cls)});
+  if(o.cross){const[x,y]=o.cross;s+=`<path class="cross" d="M${x-7} ${y-7}L${x+7} ${y+7}M${x+7} ${y-7}L${x-7} ${y+7}"/>`;}
+  // scale bar like the worksheet
+  const [km1,km2]=c.bar,u=km2/111.2*P.S,bx=W*c.barAt[0],by=H*c.barAt[1];
+  s+=`<rect class="scale-box" x="${bx-6}" y="${by-6}" width="${Math.max(u,120)+22}" height="44" rx="3"/>
+  <text class="scale" x="${bx}" y="${by+8}">${c.scale}</text>
+  <path class="scale-line" d="M${bx} ${by+24}H${bx+u}M${bx} ${by+19}v10M${bx+u/2} ${by+21}v6M${bx+u} ${by+19}v10"/>
+  <text class="scale" x="${bx}" y="${by+38}" font-size="8">0</text><text class="scale" x="${bx+u/2}" y="${by+38}" font-size="8" text-anchor="middle">${km1}</text><text class="scale" x="${bx+u}" y="${by+38}" font-size="8" text-anchor="middle">${km2} km</text>`;
+  s+=`</g><rect class="frame" x="1.25" y="1.25" width="${W-2.5}" height="${H-2.5}"/></svg>`;
+  return s;
+}
+function svgPoint(svg,e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse())}
+function nearest(cid,x,y,R){
+  const P=proj(C[cid]);let best=null,bd=R;
+  FEAT.filter(f=>f.c===cid).forEach(f=>{const[a,b]=P.p(f.at);const d=Math.hypot(a-x,b-y);if(d<bd){bd=d;best=f}});
+  return best;
+}
+function flagSVG(cid,w=42){
+  const h=Math.round(w*16/22);
+  const cross=(col,a,b)=>`<rect x="${a}" y="0" width="${b-a}" height="16" fill="${col}"/><rect x="0" y="${a}" width="22" height="${b-a}" fill="${col}"/>`;
+  let inner='';
+  if(cid==='fi')inner=`<rect width="22" height="16" fill="#fff"/>${cross('#003580',6,9.5)}`;
+  if(cid==='dk')inner=`<rect width="22" height="16" fill="#c8102e"/>${cross('#fff',6.5,9)}`;
+  if(cid==='no')inner=`<rect width="22" height="16" fill="#ba0c2f"/>${cross('#fff',6,10)}${cross('#00205b',7,9)}`;
+  if(cid==='is')inner=`<rect width="22" height="16" fill="#02529c"/>${cross('#fff',6,10)}${cross('#dc1e35',7,9)}`;
+  return `<svg class="flag" width="${w}" height="${h}" viewBox="0 0 22 16" role="img" aria-label="Flagga">${inner}</svg>`;
+}
+
+/* ===================== HELPERS ===================== */
+const $=s=>document.querySelector(s);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const store={get(){try{return JSON.parse(localStorage.getItem('nordenhaftet')||'{}')}catch(e){return{}}},set(v){try{localStorage.setItem('nordenhaftet',JSON.stringify(v))}catch(e){}}};
+const norm=s=>s.toLowerCase().replace(/ø/g,'ö').replace(/æ/g,'ä').replace(/[éè]/g,'e').replace(/í/g,'i').replace(/[\s\-.,'"]/g,'');
+const strip=s=>s.replace(/[åä]/g,'a').replace(/ö/g,'o');
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+const ICON={
+ dice:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="16" cy="16" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="16" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="16" r="1.3" fill="currentColor"/></svg>`,
+ heart:(on)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-8.6-8.6C2.2 8 4.2 4.8 7.4 4.8c2 0 3.4 1.2 4.6 2.8 1.2-1.6 2.6-2.8 4.6-2.8 3.2 0 5.2 3.2 4 6.6C19 15.6 12 20 12 20z" fill="${on?'var(--red)':'none'}" stroke="var(--red)" stroke-width="1.8"/></svg>`,
+ star:(on)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.7 6 6.4.6-4.8 4.3 1.5 6.4L12 16.8l-5.8 3.3 1.5-6.4L2.9 9.4l6.4-.6z" fill="${on?'var(--hl)':'none'}" stroke="var(--red)" stroke-width="1.6" stroke-linejoin="round"/></svg>`
+};
+
+/* ===================== APP STATE ===================== */
+let view='study',studyC='fi',cover=false,sel=null,revealed=new Set();
+let setup={ch:'all',variant:'normal'};
+let G=null,timerId=null;
+const VARS={
+ normal:{name:'Vanlig runda',desc:'12 frågor på olika sätt: hitta på kartan, välj namn, stava och fakta.'},
+ blixt:{name:'Blixtrunda',desc:'12 frågor och 15 sekunder på dig för varje.'},
+ hemlig:{name:'Hemlig karta',desc:'Inga prickar på kartan. Tryck där du tror att platsen ligger.'},
+ stava:{name:'Stavningsprovet',desc:'10 platser som du ska skriva rätt.'},
+ fakta:{name:'Faktajakten',desc:'Flaggor, huvudstäder och vad platserna är för något.'},
+ treliv:{name:'Tre liv',desc:'Hur många rätt kan du få innan du gjort tre fel?'},
+ missade:{name:'Öva på missade',desc:'Bara de platser och frågor du missade förra gången.'}
+};
+const TWISTS=['blixt','hemlig','stava','fakta','treliv'];
+
+function render(){
+  stopTimer();
+  const tabs=`<div class="tabs" role="group" aria-label="Del av häftet">
+    <button class="tab" id="t-study" aria-pressed="${view==='study'}">Plugga</button>
+    <button class="tab" id="t-play" aria-pressed="${view!=='study'}">Spela</button></div>`;
+  let body='';
+  if(view==='study')body=studyHTML();
+  else if(view==='setup')body=setupHTML();
+  else if(view==='game')body=gameHTML();
+  else if(view==='result')body=resultHTML();
+  $('#app').innerHTML=`<header class="top"><div class="brand"><h1>NORDEN</h1><p>Finland · Danmark · Norge · Island</p></div>${tabs}</header>${body}`;
+  $('#t-study').onclick=()=>{view='study';G=null;render()};
+  $('#t-play').onclick=()=>{if(view==='study'){view='setup';render()}};
+  if(view==='study')bindStudy();
+  if(view==='setup')bindSetup();
+  if(view==='game')bindGame();
+  if(view==='result')bindResult();
+}
+
+/* ---------- STUDY ---------- */
+function groups(cid){
+  const fs=FEAT.filter(f=>f.c===cid),out=[];
+  fs.forEach(f=>{const g=out[out.length-1];if(g&&g.kind===f.kind)g.items.push(f);else out.push({kind:f.kind,items:[f]})});
+  const H={Stad:'Städer',Ö:'Ö',Älv:'Älv',Vatten:'Vatten',Halvö:'Halvö',Fjord:'Fjordar',Bergstopp:'Bergstopp',Glaciär:'Glaciär',Vulkan:'Vulkan'};
+  out.forEach(g=>{g.title=H[g.kind]; if(g.items.length>1&&g.kind==='Ö')g.title='Öar'; if(g.items.length>1&&g.kind==='Älv')g.title='Älvar'});
+  return out;
+}
+function studyHTML(){
+  const c=C[studyC];
+  const chaps=CIDS.map(id=>`<button class="chap" data-c="${id}" aria-pressed="${id===studyC}">${flagSVG(id,26)} ${C[id].caps}${C[id].page?` <span class="pg">s. ${C[id].page}</span>`:''}</button>`).join('');
+  const leg=groups(studyC).map(g=>`<h4>${g.title}:</h4>`+g.items.map(f=>{
+    const hide=cover&&!revealed.has(f.id);
+    return `<button class="li ${sel===f.id?'sel':''}" data-f="${f.id}"><span class="n">${f.n}.</span><span class="${hide?'covered':''}">${esc(f.name)}</span>${f.extra&&!hide?`<span class="x">${f.extra}</span>`:''}</button>`}).join('')).join('');
+  return `<nav class="chapters" aria-label="Länder">${chaps}</nav>
+  <div class="grid2">
+    <div class="sheet mapwrap clickable" id="smap">${mapSVG(studyC,{mode:'study',hl:sel,names:sel&&(!cover||revealed.has(sel))?[sel]:[]})}</div>
+    <div>
+      <div class="ctitle"><h2 class="print">${c.caps}</h2>${flagSVG(studyC,66)}</div>
+      <div class="row"><button class="toggle" id="cover" aria-pressed="${cover}">${cover?'Namnen är övertäckta':'Täck över namnen'}</button>
+      <span class="pencil small">${cover?'Tryck på en rad eller prick för att kika.':'Tryck på en plats för att se den på kartan.'}</span></div>
+      <div class="legend">${leg}</div>
+      <h4 class="hand" style="margin:22px 0 0;font-size:1.15rem;text-decoration:underline wavy;text-underline-offset:5px">Bra att veta:</h4>
+      <ul class="facts">${c.facts.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+      <div class="row mt"><button class="btn" id="testme">Testa dig på ${c.name}</button></div>
+    </div>
+  </div>`;
+}
+function bindStudy(){
+  document.querySelectorAll('.chap').forEach(b=>b.onclick=()=>{studyC=b.dataset.c;sel=null;revealed.clear();render()});
+  document.querySelectorAll('.li').forEach(b=>b.onclick=()=>{sel=b.dataset.f;if(cover)revealed.add(sel);render()});
+  $('#cover').onclick=()=>{cover=!cover;revealed.clear();render()};
+  $('#testme').onclick=()=>{setup.ch=studyC;setup.variant='normal';startGame()};
+  const svg=$('#smap svg');
+  svg.addEventListener('click',e=>{const p=svgPoint(svg,e);const f=nearest(studyC,p.x,p.y,30);if(f){sel=f.id;if(cover)revealed.add(f.id);render()}});
+}
+
+/* ---------- SETUP ---------- */
+function setupHTML(){
+  const best=store.get().best||{};
+  const opt=(id,title,flags)=>`<button class="pick" data-ch="${id}" aria-pressed="${setup.ch===id}"><span class="flags">${flags}</span><b>${title}</b><span class="best">${best[id]?`Bäst: ${best[id].s} av ${best[id].t}`:'Inte spelat än'}</span></button>`;
+  const v=VARS[setup.variant];
+  return `<span class="eyebrow">Spela</span><h2 class="print" style="margin-top:4px">VÄLJ KAPITEL</h2>
+  <div class="picker">${opt('all','ALLA FYRA',CIDS.map(i=>flagSVG(i,24)).join(''))}${CIDS.map(i=>opt(i,C[i].caps,flagSVG(i,24))).join('')}</div>
+  <div class="varnote"><div><div class="pencil small">Spelsätt</div><div class="vn">${v.name}</div><div>${v.desc}</div></div>
+   <div class="row">${setup.variant!=='normal'?`<button class="btn ghost" id="vnorm">Vanlig runda</button>`:''}<button class="btn ghost" id="vary">${ICON.dice} Variera spelet</button></div></div>
+  <button class="btn" id="go">Starta</button>`;
+}
+function bindSetup(){
+  document.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{setup.ch=b.dataset.ch;render()});
+  $('#vary').onclick=()=>{setup.variant=pick(TWISTS.filter(t=>t!==setup.variant));render()};
+  const vn=$('#vnorm');if(vn)vn.onclick=()=>{setup.variant='normal';render()};
+  $('#go').onclick=()=>startGame();
+}
+
+/* ---------- QUESTIONS ---------- */
+function buildQ(t,ch,f,fact){
+  if(t==='fact'){return{t,c:fact.c,prompt:fact.q,opts:shuffle([fact.a,...fact.o]),ans:fact.a,f:fact.f&&FBY[fact.f],key:'q:'+fact.id,show:fact.a}}
+  if(t==='flag'){const cid=f;return{t,c:cid,prompt:'Vilket lands flagga är det här?',opts:shuffle(CIDS.map(i=>C[i].name)),ans:C[cid].name,key:'flag:'+cid,show:C[cid].name,nomap:true}}
+  const base={t,f,c:f.c,key:'f:'+f.id,show:f.name};
+  if(t==='find')return{...base,prompt:`Hitta ${lab(f)} på kartan.`};
+  if(t==='spell')return{...base,prompt:'Skriv namnet på platsen som är markerad.'};
+  if(t==='name'){
+    const same=shuffle(FEAT.filter(x=>x.c===f.c&&x.id!==f.id)).sort((a,b)=>(b.kind===f.kind)-(a.kind===f.kind));
+    return{...base,prompt:'Vad heter platsen som är markerad?',opts:shuffle([f.name,...same.slice(0,3).map(x=>x.name)]),ans:f.name};
+  }
+  if(t==='kind'){const others=shuffle(Object.keys(KIND_A).filter(k=>k!==f.kind)).slice(0,3);
+    return{...base,prompt:`Vad är ${f.name}?`,opts:shuffle([f.kind,...others].map(k=>KIND_A[k])),ans:KIND_A[f.kind],show:KIND_A[f.kind]}}
+  if(t==='country')return{...base,prompt:`I vilket land ligger ${lab(f)}?`,opts:CIDS.map(i=>C[i].name),ans:C[f.c].name,show:C[f.c].name,nomap:true,flagopts:true};
+}
+function makeRound(ch,variant,missedKeys){
+  const pool=FEAT.filter(f=>ch==='all'||f.c===ch);
+  const fpool=FACTS.filter(x=>ch==='all'||x.c===ch);
+  let feats=shuffle(pool.slice()),fi=0,facts=shuffle(fpool.slice()),qi=0,last=null;
+  const nF=()=>{let f;do{if(fi>=feats.length){feats=shuffle(feats);fi=0}f=feats[fi++]}while(f===last&&feats.length>1);last=f;return f};
+  const nQ=()=>{if(qi>=facts.length){facts=shuffle(facts);qi=0}return facts[qi++]};
+  const cidFor=()=>ch==='all'?pick(CIDS):ch;
+  const mk=t=>t==='fact'?buildQ(t,ch,null,nQ()):t==='flag'?buildQ(t,ch,cidFor()):buildQ(t,ch,nF());
+  const mix=['find','find','find','name','name','name','spell','spell','fact','fact','kind',ch==='all'?'country':'flag'];
+  let types;
+  if(variant==='missade'){
+    const qs=[];missedKeys.forEach(k=>{const[a,b]=k.split(':');
+      if(a==='f'){qs.push(buildQ('find',ch,FBY[b]));qs.push(buildQ('spell',ch,FBY[b]))}
+      else if(a==='q'){qs.push(buildQ('fact',ch,null,FACTS[+b]))}
+      else if(a==='flag'){qs.push(buildQ('flag',ch,b))}});
+    return shuffle(qs);
+  }
+  if(variant==='stava')types=Array(10).fill('spell');
+  else if(variant==='hemlig')types=[...Array(7).fill('find'),...Array(5).fill('name')];
+  else if(variant==='fakta')types=['fact','fact','fact','fact','fact','flag','kind','kind',ch==='all'?'country':'fact',ch==='all'?'country':'kind'];
+  else if(variant==='treliv')types=Array.from({length:40},()=>pick(mix));
+  else types=mix.slice();
+  return shuffle(types).map(mk);
+}
+function startGame(missedKeys){
+  const variant=missedKeys?'missade':setup.variant;
+  G={ch:setup.ch,variant,qs:makeRound(setup.ch,variant,missedKeys),i:0,score:0,res:null,missed:[],lives:3,answered:0};
+  view='game';render();
+}
+
+/* ---------- GAME ---------- */
+function gameHTML(){
+  const q=G.qs[G.i],v=VARS[G.variant],hidden=G.variant==='hemlig';
+  const total=G.variant==='treliv'?'':` av ${G.qs.length}`;
+  const status=G.variant==='treliv'?`<span class="hearts">${[0,1,2].map(i=>ICON.heart(i<G.lives)).join('')}</span>`:
+    G.variant==='blixt'?`<span class="timer" aria-label="Tid kvar"><i id="tbar"></i></span>`:'';
+  const methodName={find:'Kartfråga',name:'Välj rätt namn',spell:'Stava',fact:'Fakta',flag:'Flagga',kind:'Vad är det?',country:'Vilket land?'}[q.t];
+  // map
+  let map;
+  const reveal=[];
+  if(G.res){const tf=q.f;if(tf)reveal.push({id:tf.id,cls:'good'});if(G.res.clicked&&(!tf||G.res.clicked!==tf.id))reveal.push({id:G.res.clicked,cls:'bad'})}
+  if(q.nomap&&!G.res)map=`<div class="blank">Kartan visas<br>när du har svarat.</div>`;
+  else{
+    const hl=(['name','spell','kind'].includes(q.t)&&!G.res)?q.f.id:null;
+    map=mapSVG(q.c,{mode:hidden?'hidden':'quiz',hl,reveal,cross:G.res&&G.res.cross});
+  }
+  // answer area
+  let area='';
+  const lock=!!G.res;
+  if(q.opts){
+    area=`<div class="opts">${q.opts.map((o,i)=>{
+      let cls='';if(lock){if(o===q.ans)cls='good';else if(G.res.chosen===o)cls='bad'}
+      const fl=q.flagopts||q.t==='flag'?flagSVG(CIDS[CIDS.map(x=>C[x].name).indexOf(o)],30):'';
+      return `<button class="opt ${cls}" data-o="${esc(o)}" ${lock?'disabled':''}><span class="k">${i+1}</span>${q.flagopts?fl:''}<span>${esc(o)}</span></button>`}).join('')}</div>`;
+  }else if(q.t==='spell'){
+    area=`<form class="spell" id="spellf" autocomplete="off"><input id="spin" aria-label="Skriv namnet" placeholder="Skriv här…" ${lock?'disabled':''} value="${lock?esc(G.res.typed||''):''}" spellcheck="false" autocapitalize="words"><button class="btn" ${lock?'disabled':''}>Svara</button></form>
+      ${lock?'':`<div class="keys">${['å','ä','ö','Å','Ä','Ö'].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join('')}<button type="button" class="btn ghost" id="hint" style="width:auto;height:38px;font-size:1rem;padding:0 .8rem">Ledtråd</button></div><p class="pencil small" id="hinttxt"></p>`}`;
+  }else if(q.t==='find'){
+    area=`<p class="help">${hidden?'Tryck på kartan där du tror att den ligger.':'Tryck på rätt prick eller tecken på kartan.'}</p>`;
+  }
+  let fb='';
+  if(G.res){
+    const r=G.res,ok=r.ok;
+    let say=ok?(r.near?'Nästan rätt!':pick(['Rätt!','Snyggt!','Helt rätt!','Bra!'])):(r.timeout?'Tiden tog slut!':'Inte riktigt.');
+    let more='';
+    if(r.near)more=`Det stavas <b>${esc(q.show)}</b>.`;
+    else if(!ok)more=`Rätt svar: <b>${esc(q.show)}</b>${q.f&&q.t!=='find'?'':''}.`;
+    else if(q.t==='find'||q.t==='name'||q.t==='spell')more=`${esc(q.f.name)} är ${KIND_A[q.f.kind].toLowerCase()} i ${C[q.c].name}.`;
+    const last=G.variant==='treliv'?(G.lives<=0||G.i>=G.qs.length-1):G.i>=G.qs.length-1;
+    fb=`<div class="fb ${ok?'good':'bad'}" role="status"><div class="say">${say}</div>${more?`<div class="more">${more}</div>`:''}
+      <div><button class="btn" id="next">${last?'Se resultatet':'Nästa fråga'}</button> <span class="pencil small">eller tryck Enter</span></div></div>`;
+  }
+  return `<div class="bar"><div class="row"><span class="stat">Fråga ${G.i+1}${total}</span><span class="stat">Rätt: ${G.score}</span>${G.variant!=='normal'?`<span class="badge">${v.name}</span>`:''}</div>
+    <div class="row">${status}<button class="btn ghost" id="quit" style="font-size:.95rem;padding:.2rem .7rem">Avsluta</button></div></div>
+  <div class="grid2">
+    <div class="sheet mapwrap ${q.t==='find'&&!lock?'clickable':''}" id="gmap">${map}</div>
+    <div>
+      <div class="method">${methodName} · ${G.ch==='all'||q.t==='country'||q.t==='flag'?'Norden':C[q.c].name}</div>
+      <p class="prompt">${esc(q.prompt)}</p>
+      ${q.t==='flag'?`<div class="bigflag">${flagSVG(q.c,150)}</div>`:''}
+      ${area}${fb}
+    </div>
+  </div>`;
+}
+function bindGame(){
+  const q=G.qs[G.i];
+  $('#quit').onclick=()=>{view='setup';G=null;render()};
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(G.res)return;const o=b.dataset.o;resolve(o===q.ans,{chosen:o})});
+  const svg=$('#gmap svg');
+  if(svg&&q.t==='find'&&!G.res){
+    svg.addEventListener('click',e=>{if(G.res)return;const p=svgPoint(svg,e);
+      const hidden=G.variant==='hemlig';
+      const f=nearest(q.c,p.x,p.y,hidden?42:30);
+      if(!f){if(hidden)resolve(false,{cross:[p.x,p.y]});return}
+      resolve(f.id===q.f.id,{clicked:f.id,cross:hidden&&f.id!==q.f.id?[p.x,p.y]:null});
+    });
+  }
+  const form=$('#spellf');
+  if(form&&!G.res){
+    const inp=$('#spin');setTimeout(()=>inp.focus(),30);
+    form.onsubmit=e=>{e.preventDefault();const v=inp.value.trim();if(!v)return;
+      const names=[q.f.name,...q.f.alt].map(norm),t=norm(v);
+      if(names.includes(t))resolve(true,{typed:v});
+      else if(names.some(n=>strip(n)===strip(t)||lev(n,t)<=(n.length>8?2:1)))resolve(true,{typed:v,near:true});
+      else resolve(false,{typed:v});};
+    document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{inp.value+=b.dataset.k;inp.focus()});
+    $('#hint').onclick=()=>{const n=q.f.name;$('#hinttxt').textContent=`Börjar på "${n[0]}" och har ${n.replace(/\s/g,'').length} bokstäver: `+n.split('').map((ch,i)=>ch===' '?'  ':i===0?ch:'_').join(' ')};
+  }
+  const nx=$('#next');if(nx){nx.onclick=next;nx.focus({preventScroll:true})}
+  if(!G.res)startTimer();
+}
+function resolve(ok,info={}){
+  if(G.res)return;
+  stopTimer();
+  const q=G.qs[G.i];
+  G.res={ok,...info};G.answered++;
+  if(ok)G.score++;
+  else{G.lives--;if(!G.missed.find(m=>m.key===q.key))G.missed.push({key:q.key,q:q.prompt,show:q.show,f:q.f&&q.f.id})}
+  render();
+}
+function next(){
+  const end=G.variant==='treliv'?(G.lives<=0||G.i>=G.qs.length-1):G.i>=G.qs.length-1;
+  if(end){finish();return}
+  G.i++;G.res=null;render();window.scrollTo({top:0,behavior:'smooth'});
+}
+function startTimer(){stopTimer();if(!G||G.variant!=='blixt')return;let t=15;
+  timerId=setInterval(()=>{t-=.1;const b=$('#tbar');if(b)b.style.width=Math.max(0,t/15*100)+'%';if(t<=0){stopTimer();resolve(false,{timeout:true})}},100)}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+function finish(){
+  const st=store.get();st.best=st.best||{};
+  if(G.variant==='normal'){const b=st.best[G.ch];if(!b||G.score/G.answered>b.s/b.t)st.best[G.ch]={s:G.score,t:G.answered}}
+  st.missed=G.missed.map(m=>m.key);store.set(st);
+  view='result';render();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------- RESULT ---------- */
+function resultHTML(){
+  const t=G.answered,s=G.score,pc=t?s/t:0;
+  const stars=pc>=.9?3:pc>=.7?2:pc>=.45?1:0;
+  let comment;
+  if(G.variant==='treliv')comment=s>=15?'Otroligt! En riktig Norden-expert.':s>=8?'Starkt jobbat!':'Bra kämpat. Plugga lite och försök igen!';
+  else comment=pc>=.9?'Toppen! Du kan Norden!':pc>=.7?'Bra jobbat!':pc>=.45?'Bra början, öva lite till.':'Plugga en stund och försök igen.';
+  const scoreTxt=G.variant==='treliv'?`${s}`:`${s}/${t}`;
+  const sub=G.variant==='treliv'?`rätt innan tre fel`:`rätt svar`;
+  const ms=G.missed.length?`<h4 class="hand" style="font-size:1.2rem;margin:26px 0 4px;text-decoration:underline wavy;text-underline-offset:5px">Att öva på:</h4>
+    <ul class="missed">${G.missed.map(m=>`<li><span>${esc(m.q)}</span> <span class="ans">${esc(m.show)}</span></li>`).join('')}</ul>`:
+    `<p class="hand mt" style="font-size:1.2rem">Inga missar alls den här gången!</p>`;
+  return `<span class="eyebrow">Resultat · ${G.ch==='all'?'Alla fyra':C[G.ch].name} · ${VARS[G.variant].name}</span>
+  <div class="result mt">
+    <div class="grade"><svg viewBox="0 0 200 150" aria-hidden="true"><path d="M30 70C28 30 90 14 140 22c40 7 52 40 44 66-10 34-70 50-118 38C30 116 20 92 34 60c8-16 30-30 60-34" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round"/></svg>
+      <div style="text-align:center"><div class="sc">${scoreTxt}</div><div class="hand">${sub}</div></div></div>
+    <div><div class="stars" aria-label="${stars} av 3 stjärnor">${[0,1,2].map(i=>ICON.star(i<stars)).join('')}</div>
+      <div class="comment">${comment}</div>
+      <div class="row mt">
+        <button class="btn" id="again">Spela igen</button>
+        <button class="btn hl" id="vary">${ICON.dice} Variera spelet</button>
+        ${G.missed.length?`<button class="btn ghost" id="practice">Öva på missade</button>`:''}
+        <button class="btn ghost" id="tostudy">Till pluggsidan</button>
+      </div>
+      <p class="pencil small" style="margin-top:10px">Variera spelet väljer ett nytt spelsätt, till exempel Blixtrunda, Hemlig karta eller Tre liv.</p>
+    </div>
+  </div>${ms}`;
+}
+function bindResult(){
+  const missedKeys=G.missed.map(m=>m.key);
+  $('#again').onclick=()=>{setup.variant=G.variant==='missade'?'normal':G.variant;startGame()};
+  $('#vary').onclick=()=>{setup.variant=pick(TWISTS.filter(t=>t!==G.variant));view='setup';render();window.scrollTo({top:0})};
+  const p=$('#practice');if(p)p.onclick=()=>startGame(missedKeys);
+  $('#tostudy').onclick=()=>{view='study';if(G.ch!=='all')studyC=G.ch;G=null;render()};
+}
+
+document.addEventListener('keydown',e=>{
+  if(view!=='game'||!G)return;
+  if(e.target.tagName==='INPUT'&&!G.res)return;
+  if(G.res&&e.key==='Enter'){e.preventDefault();next();return}
+  const q=G.qs[G.i];
+  if(!G.res&&q.opts&&/^[1-4]$/.test(e.key)){const o=q.opts[+e.key-1];if(o!==undefined)resolve(o===q.ans,{chosen:o})}
+});
+
+render();
+</script>
